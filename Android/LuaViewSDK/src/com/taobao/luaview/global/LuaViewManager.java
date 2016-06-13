@@ -1,5 +1,7 @@
 package com.taobao.luaview.global;
 
+import android.util.Log;
+
 import com.taobao.luaview.fun.binder.constants.AlignBinder;
 import com.taobao.luaview.fun.binder.constants.EllipsizeBinder;
 import com.taobao.luaview.fun.binder.constants.FontStyleBinder;
@@ -41,11 +43,15 @@ import com.taobao.luaview.fun.binder.ui.UIViewPagerBinder;
 import org.luaj.vm2.Globals;
 import org.luaj.vm2.LuaError;
 import org.luaj.vm2.LuaTable;
+import org.luaj.vm2.LuaValue;
 import org.luaj.vm2.lib.LibFunction;
 
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * LuaView Lib管理等
@@ -55,6 +61,71 @@ import java.util.List;
  */
 public class LuaViewManager {
 
+    private static Map<String, List<LuaValue>> binders = new HashMap<>();
+
+    public static void initBinders() {
+        long start = System.nanoTime();
+        Log.i("Binders", "init Binders --- start");
+        //ui
+        List<LuaValue> uiBinders = new ArrayList<>();
+        uiBinders.add(new UITextViewBinder());
+        uiBinders.add(new UIEditTextBinder());
+        uiBinders.add(new UIButtonBinder());
+        uiBinders.add(new UIImageViewBinder());
+        uiBinders.add(new UIViewGroupBinder());
+        uiBinders.add(new UIListViewBinder());
+        uiBinders.add(new UIRecyclerViewBinder());
+        uiBinders.add(new UIRefreshListViewBinder());
+        uiBinders.add(new UIRefreshRecyclerViewBinder());
+        uiBinders.add(new UIViewPagerBinder());
+        uiBinders.add(new UICustomViewPagerIndicatorBinder());
+        uiBinders.add(new UICircleViewPagerIndicatorBinder());
+        uiBinders.add(new UIHorizontalScrollViewBinder());
+        uiBinders.add(new UIAlertBinder());
+        uiBinders.add(new UILoadingViewBinder());
+        uiBinders.add(new UILoadingDialogBinder());
+        uiBinders.add(new UIToastBinder());
+        uiBinders.add(new SpannableStringBinder());
+
+        //animation
+        List<LuaValue> animationBinders = new ArrayList<>();
+        animationBinders.add(new UIAnimatorBinder());
+
+        //net
+        List<LuaValue> netBinders = new ArrayList<>();
+        netBinders.add(new UIAnimatorBinder());
+
+        //kit
+        List<LuaValue> kitBinders = new ArrayList<>();
+        kitBinders.add(new TimerBinder());
+        kitBinders.add(new SystemBinder());
+        kitBinders.add(new ActionBarBinder());
+        kitBinders.add(new DownloaderBinder());
+        kitBinders.add(new UnicodeBinder());
+        kitBinders.add(new DataBinder());
+        kitBinders.add(new JsonBinder());
+        kitBinders.add(new AudioBinder());
+        kitBinders.add(new VibratorBinder());
+
+        //常量
+        List<LuaValue> constantsBinders = new ArrayList<>();
+        constantsBinders.add(new AlignBinder());
+        constantsBinders.add(new TextAlignBinder());
+        constantsBinders.add(new FontWeightBinder());
+        constantsBinders.add(new FontStyleBinder());
+        constantsBinders.add(new ScaleTypeBinder());
+        constantsBinders.add(new GravityBinder());
+        constantsBinders.add(new EllipsizeBinder());
+        constantsBinders.add(new InterpolatorBinder());
+
+        binders.put("ui", uiBinders);
+        binders.put("animation", animationBinders);
+        binders.put("net", netBinders);
+        binders.put("kit", kitBinders);
+        binders.put("constants", constantsBinders);
+        Log.i("Binders", "init Binders --- end, used: " + (System.nanoTime() - start) + "ns");
+    }
+
     /**
      * load Android API lib
      * TODO 能否做到按需加载，而不是首次进来加载全部binder
@@ -62,53 +133,14 @@ public class LuaViewManager {
      * @param globals
      */
     public static void loadLuaViewLibs(final Globals globals) {
-        //ui
-        globals.load(new UITextViewBinder());
-        globals.load(new UIEditTextBinder());
-        globals.load(new UIButtonBinder());
-        globals.load(new UIImageViewBinder());
-        globals.load(new UIViewGroupBinder());
-        globals.load(new UIListViewBinder());
-        globals.load(new UIRecyclerViewBinder());
-        globals.load(new UIRefreshListViewBinder());
-        globals.load(new UIRefreshRecyclerViewBinder());
-        globals.load(new UIViewPagerBinder());
-        globals.load(new UICustomViewPagerIndicatorBinder());
-        globals.load(new UICircleViewPagerIndicatorBinder());
-        globals.load(new UIHorizontalScrollViewBinder());
-        globals.load(new UIAlertBinder());
-
-        globals.load(new UILoadingViewBinder());
-        globals.load(new UILoadingDialogBinder());
-        globals.load(new UIToastBinder());
-        globals.load(new SpannableStringBinder());
-
-        //animation
-        globals.load(new UIAnimatorBinder());
-
-        //net
-        globals.load(new HttpBinder());
-
-        //kit
-        globals.load(new TimerBinder());
-        globals.load(new SystemBinder());
-        globals.load(new ActionBarBinder());
-        globals.load(new DownloaderBinder());
-        globals.load(new UnicodeBinder());
-        globals.load(new DataBinder());
-        globals.load(new JsonBinder());
-        globals.load(new AudioBinder());
-        globals.load(new VibratorBinder());
-
-        //常量
-        globals.load(new AlignBinder());
-        globals.load(new TextAlignBinder());
-        globals.load(new FontWeightBinder());
-        globals.load(new FontStyleBinder());
-        globals.load(new ScaleTypeBinder());
-        globals.load(new GravityBinder());
-        globals.load(new EllipsizeBinder());
-        globals.load(new InterpolatorBinder());
+        long start = System.nanoTime();
+        Log.i("Binders", "loadLuaViewLibs  @"+globals.hashCode() + " ----  start");
+        for (String key : binders.keySet()) {
+            for (LuaValue luaValue : binders.get(key)) {
+                globals.load(luaValue);
+            }
+        }
+        Log.i("Binders", "loadLuaViewLibs  @"+globals.hashCode() + " ----  end, used: " + (System.nanoTime() - start) + "ns");
     }
 
     /**
